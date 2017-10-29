@@ -2,23 +2,27 @@ let accessToken = '';
 const CLIENT_ID = 'Bi10Mnj4rw_Bg7F5j6naVA';
 const CLIENT_SECRET = '5DwO4dZ52wIzKncCXRl7xVgdZeiNJveKsvTRSSrcT7HewzHtk5OcNvftCKbnuwQt';
 let authUrl = `https://cors-anywhere.herokuapp.com/https://api.yelp.com/oauth2/token?grant_type=client_credentials&client_id=${CLIENT_ID}&client_secret=${CLIENT_SECRET}`;
+let crd = {
+  latitude:0,
+  longitude:0
+};
 
 const Yelp = {
 search(term,location,sortBy='best_match') {
       if (!location) {
-          return new Promise(resolve => resolve(
-            navigator.geolocation.getCurrentPosition((pos) => {
-            let crd = pos.coords;
+          return new Promise((resolve,reject) => {
+              navigator.geolocation.getCurrentPosition(pos => {
+              crd.latitude = pos.coords.latitude;
+              crd.longitude = pos.coords.longitude;
+              resolve(crd)
+            });
+          }).then(crd => {
             let url = `https://cors-anywhere.herokuapp.com/https://api.yelp.com/v3/businesses/search?limit=5&term=${term}&latitude=${crd.latitude}&longitude=${crd.longitude}&sort_by=${sortBy}`;
-            console.log('DEBUG fetch url :');
-            console.log(url);
-            return this.getBusiness(url);
+            return this.getBusiness(url)
           })
-        ));
+
 
       } else {
-        console.log('DEBUG fetch url :');
-        console.log(url);
         let url = `https://cors-anywhere.herokuapp.com/https://api.yelp.com/v3/businesses/search?limit=5&term=${term}&location=${location}&sort_by=${sortBy}`;
         return this.getBusiness(url);
     }
@@ -26,9 +30,8 @@ search(term,location,sortBy='best_match') {
 
 
 getBusiness(url) {
+  console.log('getBusiness');
     return this.getAccessToken().then(() => {
-      console.log('his.getAccessToken().then(() => {');
-      console.log(url);
             return fetch(url,{
               headers:{'Authorization':`Bearer ${accessToken}`,'origin':'https://api.yelp.com/v3/businesses/search'}
           });
@@ -54,7 +57,7 @@ getBusiness(url) {
 
       getAccessToken() {
            if (accessToken) {
-             return new Promise(resolve => resolve(accessToken));
+             return new Promise(resolve =>    resolve(accessToken));
              }
              return fetch(authUrl,{
                method:'POST',
